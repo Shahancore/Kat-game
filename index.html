@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Talk with Kat</title>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Consolas', monospace;
+    background: linear-gradient(to bottom, #3a3a3a, #111);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+  h1 {
+    color: #ff003c;
+    font-size: 3rem;
+    margin-bottom: 20px;
+    transition: transform 0.8s ease-in-out, opacity 0.8s ease-in-out;
+  }
+  canvas {
+    background: transparent;
+  }
+  .button {
+    background: #ff003c;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.5rem;
+    color: white;
+    cursor: pointer;
+    border-radius: 12px;
+    margin-top: 20px;
+  }
+  .dialogue-box {
+    width: 80%;
+    background: black;
+    border: 2px solid #ff003c;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 1.2rem;
+    min-height: 100px;
+    position: relative;
+  }
+  .options {
+    display: flex;
+    justify-content: space-evenly;
+    margin-top: 20px;
+  }
+  .option-btn {
+    background: black;
+    border: 2px solid #ff003c;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: white;
+    transition: transform 0.2s;
+  }
+  .option-btn:hover {
+    transform: scale(1.05);
+  }
+  .hidden {
+    display: none;
+  }
+  .death, .win {
+    text-align: center;
+  }
+  .death h2 {
+    font-size: 3rem;
+    color: red;
+  }
+  .reason {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+  }
+</style>
+</head>
+<body>
+  <h1 id="title">TALK WITH KAT.</h1>
+  <canvas id="katCanvas" width="300" height="300"></canvas>
+  <button id="startBtn" class="button">START</button>
+  <div id="dialogueSection" class="hidden">
+    <div class="dialogue-box"><span id="dialogueText"></span><span id="cursor">|</span></div>
+    <div class="options" id="options"></div>
+  </div>
+  <div id="deathScreen" class="hidden death">
+    <h2>YOU DIED</h2>
+    <div class="reason" id="deathReason"></div>
+    <button id="playAgainDeath" class="button">PLAY AGAIN</button>
+  </div>
+  <div id="winScreen" class="hidden win">
+    <h2 style="color:#ff003c">CONGRATULATIONS!</h2>
+    <button id="playAgainWin" class="button">PLAY AGAIN</button>
+  </div>
+<script>
+const canvas = document.getElementById('katCanvas');
+const ctx = canvas.getContext('2d');
+let frame = 0;
+
+// Placeholder for Kat image (white box)
+const katImg = new Image();
+katImg.src = 'kat.png'; // Replace when image is available
+
+function drawKat() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const bob = Math.sin(frame * 0.05) * 10;
+  if (katImg.complete) {
+    ctx.drawImage(katImg, 0, bob, 300, 300);
+  } else {
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, bob, 300, 300);
+  }
+  frame++;
+  requestAnimationFrame(drawKat);
+}
+drawKat();
+
+// Dialogue system
+const dialogues = [
+  { kat: 'Hi.', choices: ['Hi.', 'Hello.'], correct: 'Hi.', death: 'Respond the same way Kat does.' },
+  { kat: 'How are you.', choices: ['Bad.', 'Good.'], correct: 'Bad.', death: 'You have to be bad.' },
+  { kat: 'Do you like me.', choices: ['Yes.', 'No.'], correct: 'Yes.', death: "Who doesn't like Kat?" },
+  { kat: 'Whats my fav color.', choices: ['Black.', 'White.'], correct: 'Black.', death: "It's Kat! Obviously black." },
+  { kat: 'Who is the coolest cat.', choices: ['Kat.', 'Cat.'], correct: 'Kat.', death: 'Obviously Kat!' },
+  { kat: 'Goodbye.', choices: ['Goodbye.', 'Byeeee.'], correct: 'Goodbye.', death: 'Respond the same way Kat does.' }
+];
+
+let currentIndex = 0;
+let typingIndex = 0;
+let typingActive = false;
+let currentText = '';
+
+const startBtn = document.getElementById('startBtn');
+const title = document.getElementById('title');
+const dialogueSection = document.getElementById('dialogueSection');
+const dialogueText = document.getElementById('dialogueText');
+const cursor = document.getElementById('cursor');
+const optionsDiv = document.getElementById('options');
+const deathScreen = document.getElementById('deathScreen');
+const winScreen = document.getElementById('winScreen');
+const deathReason = document.getElementById('deathReason');
+
+startBtn.addEventListener('click', () => {
+  title.style.transform = 'translateY(-200px)';
+  title.style.opacity = '0';
+  setTimeout(() => {
+    startBtn.classList.add('hidden');
+    dialogueSection.classList.remove('hidden');
+    startDialogue();
+  }, 800);
+});
+
+function startDialogue() {
+  typingIndex = 0;
+  typingActive = true;
+  currentText = dialogues[currentIndex].kat;
+  dialogueText.textContent = '';
+  cursor.style.display = 'inline';
+  optionsDiv.innerHTML = '';
+  typeWriter();
+}
+
+function typeWriter() {
+  if (typingIndex < currentText.length) {
+    dialogueText.textContent += currentText.charAt(typingIndex);
+    typingIndex++;
+    setTimeout(typeWriter, 50);
+  } else {
+    cursor.style.display = 'inline';
+    setTimeout(showChoices, 300);
+  }
+}
+
+function showChoices() {
+  optionsDiv.innerHTML = '';
+  let shuffled = [...dialogues[currentIndex].choices].sort(() => Math.random() - 0.5);
+  shuffled.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = choice;
+    btn.onclick = () => handleChoice(choice);
+    optionsDiv.appendChild(btn);
+  });
+}
+
+function handleChoice(choice) {
+  if (choice === dialogues[currentIndex].correct) {
+    currentIndex++;
+    if (currentIndex >= dialogues.length) {
+      dialogueSection.classList.add('hidden');
+      winScreen.classList.remove('hidden');
+    } else {
+      startDialogue();
+    }
+  } else {
+    dialogueSection.classList.add('hidden');
+    deathScreen.classList.remove('hidden');
+    deathReason.textContent = dialogues[currentIndex].death;
+  }
+}
+
+document.getElementById('playAgainDeath').onclick = restartGame;
+document.getElementById('playAgainWin').onclick = restartGame;
+
+function restartGame() {
+  currentIndex = 0;
+  dialogueSection.classList.add('hidden');
+  deathScreen.classList.add('hidden');
+  winScreen.classList.add('hidden');
+  startBtn.classList.remove('hidden');
+  title.style.transform = 'translateY(0)';
+  title.style.opacity = '1';
+}
+
+setInterval(() => {
+  cursor.style.visibility = cursor.style.visibility === 'hidden' ? 'visible' : 'hidden';
+}, 400);
+</script>
+</body>
+</html>
