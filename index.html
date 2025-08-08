@@ -1,226 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Talk with Kat</title>
-<style>
-  body {
-    margin: 0;
-    font-family: 'Consolas', monospace;
-    background: linear-gradient(to bottom, #3a3a3a, #111);
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    overflow: hidden;
-  }
-  h1 {
-    color: #ff003c;
-    font-size: 3rem;
-    margin-bottom: 20px;
-    transition: transform 0.8s ease-in-out, opacity 0.8s ease-in-out;
-  }
-  canvas {
-    background: transparent;
-  }
-  .button {
-    background: #ff003c;
-    border: none;
-    padding: 15px 30px;
-    font-size: 1.5rem;
-    color: white;
-    cursor: pointer;
-    border-radius: 12px;
-    margin-top: 20px;
-  }
-  .dialogue-box {
-    width: 80%;
-    background: black;
-    border: 2px solid #ff003c;
-    padding: 20px;
-    border-radius: 8px;
-    margin-top: 20px;
-    font-size: 1.2rem;
-    min-height: 100px;
-    position: relative;
-  }
-  .options {
-    display: flex;
-    justify-content: space-evenly;
-    margin-top: 20px;
-  }
-  .option-btn {
-    background: black;
-    border: 2px solid #ff003c;
-    padding: 10px 20px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 1.2rem;
-    color: white;
-    transition: transform 0.2s;
-  }
-  .option-btn:hover {
-    transform: scale(1.05);
-  }
-  .hidden {
-    display: none;
-  }
-  .death, .win {
-    text-align: center;
-  }
-  .death h2 {
-    font-size: 3rem;
-    color: red;
-  }
-  .reason {
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Talk with Kat</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(#222, #444);
+      color: white;
+      overflow: hidden;
+    }
+
+    .start-screen, .game-container, .end-screen {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .start-screen {
+      background: black;
+      color: white;
+      z-index: 10;
+    }
+
+    .start-screen h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+    }
+
+    .start-screen button, .end-screen button, .options button {
+      padding: 10px 20px;
+      font-size: 1.2rem;
+      border: none;
+      cursor: pointer;
+      background: red;
+      color: white;
+      border-radius: 5px;
+      transition: transform 0.2s ease;
+    }
+
+    .start-screen button:hover,
+    .options button:hover {
+      transform: scale(1.05);
+    }
+
+    .kat-image {
+      width: 300px;
+      height: 300px;
+      animation: bob 2s infinite;
+      object-fit: contain;
+    }
+
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .dialogue-box {
+      background: rgba(0, 0, 0, 0.7);
+      border: 2px solid red;
+      padding: 20px;
+      max-width: 600px;
+      margin-top: 30px;
+      box-shadow: 0 0 15px red;
+      min-height: 100px;
+      font-size: 1.3rem;
+      position: relative;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 10px;
+      background: white;
+      margin-left: 4px;
+      animation: blink 1s step-start infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .options {
+      margin-top: 20px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .end-screen {
+      background: rgba(0, 0, 0, 0.95);
+      color: white;
+      text-align: center;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .end-screen img {
+      width: 300px;
+      height: 300px;
+      object-fit: contain;
+      margin-bottom: 20px;
+      animation: bob 2s infinite;
+    }
+
+    .end-screen h2 {
+      margin-bottom: 20px;
+      font-size: 2rem;
+    }
+  </style>
 </head>
 <body>
-  <h1 id="title">TALK WITH KAT.</h1>
-  <canvas id="katCanvas" width="300" height="300"></canvas>
-  <button id="startBtn" class="button">START</button>
-  <div id="dialogueSection" class="hidden">
-    <div class="dialogue-box"><span id="dialogueText"></span><span id="cursor">|</span></div>
+  <div class="start-screen">
+    <h1>Talk with Kat</h1>
+    <button onclick="startGame()">Start</button>
+  </div>
+
+  <div class="game-container" style="display: none;">
+    <img id="kat-img" class="kat-image" src="kat1.png" alt="Kat">
+    <div class="dialogue-box">
+      <span id="dialogue"></span><span class="cursor"></span>
+    </div>
     <div class="options" id="options"></div>
   </div>
-  <div id="deathScreen" class="hidden death">
-    <h2>YOU DIED</h2>
-    <div class="reason" id="deathReason"></div>
-    <button id="playAgainDeath" class="button">PLAY AGAIN</button>
+
+  <div class="end-screen" id="end-screen">
+    <img id="end-kat-img" src="kat1.png" alt="End Kat">
+    <h2 id="end-message">You Died.</h2>
+    <button onclick="location.reload()">Play Again</button>
   </div>
-  <div id="winScreen" class="hidden win">
-    <h2 style="color:#ff003c">CONGRATULATIONS!</h2>
-    <button id="playAgainWin" class="button">PLAY AGAIN</button>
-  </div>
-<script>
-const canvas = document.getElementById('katCanvas');
-const ctx = canvas.getContext('2d');
-let frame = 0;
 
-// Placeholder for Kat image (white box)
-const katImg = new Image();
-katImg.src = 'kat.png'; // Replace when image is available
+  <script>
+    const dialogues = [
+      { q: "Welcome. This is just a quick survey.", a: ["Okay", "Nope"], bad: 1 },
+      { q: "Are you afraid of the dark?", a: ["Yes", "No"], bad: 1 },
+      { q: "Do you like cats?", a: ["Of course", "Not really"], bad: 1 },
+      { q: "Black or white?", a: ["Black", "White"], bad: 1 },
+      { q: "Do you like me?", a: ["Yes Kat", "No Kat"], bad: 1 },
+      { q: "Look... Behind... You...", a: ["I'm scared", "There is nothing"], bad: 1 },
+      { q: "Would you let me in your house?", a: ["Yes", "No"], bad: 1 },
+      { q: "Who's the coolest cat in the world?", a: ["Kat", "Me"], bad: 1 }
+    ];
 
-function drawKat() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const bob = Math.sin(frame * 0.05) * 10;
-  if (katImg.complete) {
-    ctx.drawImage(katImg, 0, bob, 300, 300);
-  } else {
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, bob, 300, 300);
-  }
-  frame++;
-  requestAnimationFrame(drawKat);
-}
-drawKat();
+    let current = 0;
+    let badMeter = 0;
 
-// Dialogue system
-const dialogues = [
-  { kat: 'Hi.', choices: ['Hi.', 'Hello.'], correct: 'Hi.', death: 'Respond the same way Kat does.' },
-  { kat: 'How are you.', choices: ['Bad.', 'Good.'], correct: 'Bad.', death: 'You have to be bad.' },
-  { kat: 'Do you like me.', choices: ['Yes.', 'No.'], correct: 'Yes.', death: "Who doesn't like Kat?" },
-  { kat: 'Whats my fav color.', choices: ['Black.', 'White.'], correct: 'Black.', death: "It's Kat! Obviously black." },
-  { kat: 'Who is the coolest cat.', choices: ['Kat.', 'Cat.'], correct: 'Kat.', death: 'Obviously Kat!' },
-  { kat: 'Goodbye.', choices: ['Goodbye.', 'Byeeee.'], correct: 'Goodbye.', death: 'Respond the same way Kat does.' }
-];
+    const dialogueEl = document.getElementById("dialogue");
+    const optionsEl = document.getElementById("options");
+    const katImg = document.getElementById("kat-img");
+    const endScreen = document.getElementById("end-screen");
+    const endMessage = document.getElementById("end-message");
+    const endKatImg = document.getElementById("end-kat-img");
 
-let currentIndex = 0;
-let typingIndex = 0;
-let typingActive = false;
-let currentText = '';
-
-const startBtn = document.getElementById('startBtn');
-const title = document.getElementById('title');
-const dialogueSection = document.getElementById('dialogueSection');
-const dialogueText = document.getElementById('dialogueText');
-const cursor = document.getElementById('cursor');
-const optionsDiv = document.getElementById('options');
-const deathScreen = document.getElementById('deathScreen');
-const winScreen = document.getElementById('winScreen');
-const deathReason = document.getElementById('deathReason');
-
-startBtn.addEventListener('click', () => {
-  title.style.transform = 'translateY(-200px)';
-  title.style.opacity = '0';
-  setTimeout(() => {
-    startBtn.classList.add('hidden');
-    dialogueSection.classList.remove('hidden');
-    startDialogue();
-  }, 800);
-});
-
-function startDialogue() {
-  typingIndex = 0;
-  typingActive = true;
-  currentText = dialogues[currentIndex].kat;
-  dialogueText.textContent = '';
-  cursor.style.display = 'inline';
-  optionsDiv.innerHTML = '';
-  typeWriter();
-}
-
-function typeWriter() {
-  if (typingIndex < currentText.length) {
-    dialogueText.textContent += currentText.charAt(typingIndex);
-    typingIndex++;
-    setTimeout(typeWriter, 50);
-  } else {
-    cursor.style.display = 'inline';
-    setTimeout(showChoices, 300);
-  }
-}
-
-function showChoices() {
-  optionsDiv.innerHTML = '';
-  let shuffled = [...dialogues[currentIndex].choices].sort(() => Math.random() - 0.5);
-  shuffled.forEach(choice => {
-    const btn = document.createElement('button');
-    btn.className = 'option-btn';
-    btn.textContent = choice;
-    btn.onclick = () => handleChoice(choice);
-    optionsDiv.appendChild(btn);
-  });
-}
-
-function handleChoice(choice) {
-  if (choice === dialogues[currentIndex].correct) {
-    currentIndex++;
-    if (currentIndex >= dialogues.length) {
-      dialogueSection.classList.add('hidden');
-      winScreen.classList.remove('hidden');
-    } else {
-      startDialogue();
+    function startGame() {
+      document.querySelector(".start-screen").style.display = "none";
+      document.querySelector(".game-container").style.display = "flex";
+      showDialogue();
     }
-  } else {
-    dialogueSection.classList.add('hidden');
-    deathScreen.classList.remove('hidden');
-    deathReason.textContent = dialogues[currentIndex].death;
-  }
-}
 
-document.getElementById('playAgainDeath').onclick = restartGame;
-document.getElementById('playAgainWin').onclick = restartGame;
+    function showDialogue() {
+      optionsEl.innerHTML = "";
+      const d = dialogues[current];
+      typeWriter(d.q);
 
-function restartGame() {
-  currentIndex = 0;
-  dialogueSection.classList.add('hidden');
-  deathScreen.classList.add('hidden');
-  winScreen.classList.add('hidden');
-  startBtn.classList.remove('hidden');
-  title.style.transform = 'translateY(0)';
-  title.style.opacity = '1';
-}
+      let answers = [...d.a];
+      if (Math.random() < 0.5) answers.reverse(); // shuffle
 
-setInterval(() => {
-  cursor.style.visibility = cursor.style.visibility === 'hidden' ? 'visible' : 'hidden';
-}, 400);
-</script>
+      answers.forEach(answer => {
+        const btn = document.createElement("button");
+        btn.textContent = answer;
+        btn.onclick = () => {
+          if (answer !== d.a[0]) badMeter++;
+          current++;
+          updateKatFace();
+          if (current < dialogues.length) showDialogue();
+          else endGame();
+        };
+        optionsEl.appendChild(btn);
+      });
+    }
+
+    function typeWriter(text) {
+      let i = 0;
+      dialogueEl.innerHTML = "";
+      const interval = setInterval(() => {
+        dialogueEl.innerHTML += text.charAt(i);
+        i++;
+        if (i >= text.length) clearInterval(interval);
+      }, 40);
+    }
+
+    function updateKatFace() {
+      if (badMeter >= 3) katImg.src = "kat2.png";
+      else if (badMeter === 0) katImg.src = "kat3.png";
+      else katImg.src = "kat1.png";
+    }
+
+    function endGame() {
+      document.querySelector(".game-container").style.display = "none";
+      endScreen.style.display = "flex";
+      if (badMeter >= 3) {
+        endMessage.textContent = "YOU DIED.";
+        endKatImg.src = "kat2.png";
+      } else if (badMeter > 0) {
+        endMessage.textContent = "KAT LEFT.";
+        endKatImg.src = "kat1.png";
+      } else {
+        endMessage.textContent = "KAT LET YOU LIVE.";
+        endKatImg.src = "kat3.png";
+      }
+    }
+  </script>
 </body>
 </html>
