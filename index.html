@@ -66,7 +66,14 @@ button{font-family:inherit}
 @keyframes popup-glitch{ 0%{ text-shadow:-2px 0 red,2px 0 white } 50%{ text-shadow:2px 0 red,-2px 0 white } 100%{ text-shadow:0 0 0 red } }
 
 /* responsive */
-@media (max-width:880px){ #achievements{ display:none } #dialogue-wrap{ width:94% } #kat-img{ width:220px } }
+@media (max-width:880px){
+  #achievements{
+    right: -260px; /* stays hidden off-screen until toggled */
+    display: flex; /* keep it present so JS can move it in */
+  }
+  #dialogue-wrap{ width:94% }
+  #kat-img{ width:220px }
+}
 </style>
 </head>
 <body>
