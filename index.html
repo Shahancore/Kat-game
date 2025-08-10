@@ -1,230 +1,458 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Talk with Kat</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Talk with Kat — Ultimate</title>
+<style>
+:root{
+  --accent:#ff003c;
+  --bg1:#121212;
+  --bg2:#2b2b2b;
+  --panel:rgba(0,0,0,0.75);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:"Courier New",monospace;background:linear-gradient(180deg,var(--bg2),var(--bg1));color:#fff;overflow:hidden}
 
-    html, body {
-      height: 100%;
-      width: 100%;
-      font-family: 'Courier New', monospace;
-      background: linear-gradient(#222, #444);
-      color: white;
-      overflow: hidden;
-    }
+a{color:inherit}
+button{font-family:inherit}
 
-    .start-screen, .game-container, .end-screen {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
+/* start screen */
+#start-screen, #game-screen, #end-screen { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column }
+#start-screen{ background:#000; z-index:50 }
+#start-title{ font-size:3rem; color:var(--accent); letter-spacing:3px; animation:flicker 2s infinite; text-shadow:0 0 12px rgba(255,0,60,0.15) }
+@keyframes flicker{ 0%,19%,21%,23%,25%,54%,56%,100%{opacity:1} 20%,24%,55%{opacity:.18} }
+#start-btn{ margin-top:24px;padding:12px 22px;border:2px solid var(--accent);background:transparent;color:#fff;border-radius:8px;cursor:pointer;transition:transform .18s }
+#start-btn:hover{ transform:scale(1.04); background:var(--accent); color:#000 }
 
-    .start-screen {
-      background: black;
-      color: white;
-      z-index: 10;
-    }
+/* game layout */
+#game-screen{ display:none; gap:18px; z-index:20; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:48px }
+#kat-img{ width:300px; height:auto; object-fit:contain; animation:breath 3s ease-in-out infinite; transition:transform .18s filter .18s }
+@keyframes breath{ 0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)} }
 
-    .start-screen h1 {
-      font-size: 3rem;
-      margin-bottom: 20px;
-    }
+/* dialogue */
+#dialogue-wrap{ width:min(900px,92%); display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:6px }
+#dialogue-box{ width:100%; background:var(--panel); border:2px solid var(--accent); padding:20px; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.6); transform-origin:center top; opacity:0; transform:scale(.98) translateY(6px); transition:all .35s cubic-bezier(.2,.9,.3,1) }
+#dialogue-box.show{ opacity:1; transform:scale(1) translateY(0) }
+#type-text{ white-space:pre-wrap; word-break:break-word; font-size:1.05rem; color:#e8fbf7 }
+.cursor{ display:inline-block; width:10px; height:16px; background:var(--accent); margin-left:6px; animation:blink 1s steps(2) infinite; vertical-align:middle; border-radius:2px }
+@keyframes blink{50%{opacity:0}}
 
-    .start-screen button, .end-screen button, .options button {
-      padding: 10px 20px;
-      font-size: 1.2rem;
-      border: none;
-      cursor: pointer;
-      background: red;
-      color: white;
-      border-radius: 5px;
-      transition: transform 0.2s ease;
-    }
+/* choices */
+#choices{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center }
+.choice{ padding:10px 16px; border-radius:8px; border:2px solid var(--accent); background:transparent; color:#fff; cursor:pointer; font-weight:700; transform-origin:center; opacity:0; transform:translateY(8px) scale(.98); transition:all .25s }
+.choice.show{ opacity:1; transform:translateY(0) scale(1) }
+.choice:hover{ transform:translateY(-3px) scale(1.03) }
+.choice.glitch{ animation:glitch-jolt .28s linear; }
+@keyframes glitch-jolt{ 0%{transform:translateX(0)}20%{transform:translateX(-6px) skewX(-6deg)}40%{transform:translateX(6px) skewX(6deg)}60%{transform:translateX(-3px)}100%{transform:translateX(0)} }
 
-    .start-screen button:hover,
-    .options button:hover {
-      transform: scale(1.05);
-    }
+/* end */
+#end-screen{ display:none; z-index:40; background:linear-gradient(180deg,#000000bb,#220000aa); gap:12px; align-items:center; justify-content:center }
+#end-kat{ width:320px; height:auto; object-fit:contain; transform-origin:center; opacity:0; transform:scale(.96) }
+#end-kat.show{ opacity:1; transform:scale(1.02); transition:all .8s cubic-bezier(.18,.9,.28,1) }
+#end-text{ color:var(--accent); font-size:1.35rem; letter-spacing:1px; text-shadow:0 0 8px rgba(255,0,60,0.12) }
 
-    .kat-image {
-      width: 300px;
-      height: 300px;
-      animation: bob 2s infinite;
-      object-fit: contain;
-    }
+/* achievements: collapsible sidebar */
+#ach-toggle{ position:fixed; top:10px; right:10px; z-index:60; background:var(--accent); color:#000; border:none; padding:8px 10px; border-radius:6px; cursor:pointer; font-weight:700 }
+#achievements{ position:fixed; right:-260px; top:0; height:100%; width:260px; background:rgba(0,0,0,0.92); border-left:2px solid var(--accent); padding:12px; z-index:59; transition:right .45s cubic-bezier(.2,.9,.3,1); display:flex; flex-direction:column; gap:10px; overflow:auto }
+#achievements.open{ right:0 }
+#ach-title{ color:var(--accent); font-weight:900; text-align:center; font-size:1.02rem }
+.ach-item{ padding:10px; border-radius:8px; background:rgba(255,0,60,0.04); border:1px solid rgba(255,0,60,0.06); font-size:.95rem; opacity:0; transform:translateX(6px) }
+.ach-item.show{ opacity:1; transform:translateX(0); transition:all .36s ease }
 
-    @keyframes bob {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
+/* popup */
+#achievement-popup{ position:fixed; right:20px; bottom:-120px; z-index:999; background:rgba(0,0,0,0.95); border:2px solid var(--accent); padding:10px 14px; border-radius:8px; color:#fff; font-weight:800; letter-spacing:.3px; transition:all .45s cubic-bezier(.2,.9,.3,1); box-shadow:0 8px 30px rgba(0,0,0,.6); }
+#achievement-popup.show{ bottom:24px; animation:popup-glitch .45s linear 1 }
+@keyframes popup-glitch{ 0%{ text-shadow:-2px 0 red,2px 0 white } 50%{ text-shadow:2px 0 red,-2px 0 white } 100%{ text-shadow:0 0 0 red } }
 
-    .dialogue-box {
-      background: rgba(0, 0, 0, 0.7);
-      border: 2px solid red;
-      padding: 20px;
-      max-width: 600px;
-      margin-top: 30px;
-      box-shadow: 0 0 15px red;
-      min-height: 100px;
-      font-size: 1.3rem;
-      position: relative;
-    }
-
-    .cursor {
-      display: inline-block;
-      width: 10px;
-      background: white;
-      margin-left: 4px;
-      animation: blink 1s step-start infinite;
-    }
-
-    @keyframes blink {
-      50% { opacity: 0; }
-    }
-
-    .options {
-      margin-top: 20px;
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .end-screen {
-      background: rgba(0, 0, 0, 0.95);
-      color: white;
-      text-align: center;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .end-screen img {
-      width: 300px;
-      height: 300px;
-      object-fit: contain;
-      margin-bottom: 20px;
-      animation: bob 2s infinite;
-    }
-
-    .end-screen h2 {
-      margin-bottom: 20px;
-      font-size: 2rem;
-    }
-  </style>
+/* responsive */
+@media (max-width:880px){ #achievements{ display:none } #dialogue-wrap{ width:94% } #kat-img{ width:220px } }
+</style>
 </head>
 <body>
-  <div class="start-screen">
-    <h1>Talk with Kat</h1>
-    <button onclick="startGame()">Start</button>
+
+<!-- achievements toggle + panel -->
+<button id="ach-toggle">≡</button>
+<div id="achievements" aria-hidden="true">
+  <div id="ach-title">Achievements</div>
+  <div id="ach-list"></div>
+  <div style="opacity:.6;font-size:.85rem;margin-top:6px;padding:6px;border-top:1px solid rgba(255,0,60,.04)"></div>
+</div>
+
+<!-- start -->
+<section id="start-screen">
+  <div id="start-title">TALK WITH KAT</div>
+  <button id="start-btn">START</button>
+</section>
+
+<!-- game -->
+<section id="game-screen" style="display:none">
+  <img id="kat-img" src="kat1.png" alt="Kat">
+  <div id="dialogue-wrap">
+    <div id="dialogue-box"><span id="type-text"></span><span class="cursor" id="cursor-el"></span></div>
+    <div id="choices"></div>
   </div>
+</section>
 
-  <div class="game-container" style="display: none;">
-    <img id="kat-img" class="kat-image" src="kat1.png" alt="Kat">
-    <div class="dialogue-box">
-      <span id="dialogue"></span><span class="cursor"></span>
-    </div>
-    <div class="options" id="options"></div>
-  </div>
+<!-- end -->
+<section id="end-screen">
+  <img id="end-kat" src="" alt="Kat ending">
+  <div id="end-text"></div>
+  <button id="play-again" style="margin-top:18px;padding:10px 14px;border:2px solid var(--accent);background:transparent;color:#fff;cursor:pointer">PLAY AGAIN</button>
+</section>
 
-  <div class="end-screen" id="end-screen">
-    <img id="end-kat-img" src="kat1.png" alt="End Kat">
-    <h2 id="end-message">You Died.</h2>
-    <button onclick="location.reload()">Play Again</button>
-  </div>
+<!-- popup -->
+<div id="achievement-popup" aria-live="polite"></div>
 
-  <script>
-    const dialogues = [
-      { q: "Welcome. This is just a quick survey.", a: ["Okay", "Nope"], bad: 1 },
-      { q: "Are you afraid of the dark?", a: ["Yes", "No"], bad: 1 },
-      { q: "Do you like cats?", a: ["Of course", "Not really"], bad: 1 },
-      { q: "Black or white?", a: ["Black", "White"], bad: 1 },
-      { q: "Do you like me?", a: ["Yes Kat", "No Kat"], bad: 1 },
-      { q: "Look... Behind... You...", a: ["I'm scared", "There is nothing"], bad: 1 },
-      { q: "Would you let me in your house?", a: ["Yes", "No"], bad: 1 },
-      { q: "Who's the coolest cat in the world?", a: ["Kat", "Me"], bad: 1 }
-    ];
+<script>
+/* ====================== Game data & state ====================== */
+const dialogues = [
+  { q: "Welcome. I've been expecting you.", a: ["Okay", "Nope"], bad: 1 },
+  { q: "Are you afraid of the dark?", a: ["Yes", "No"], bad: 1 },
+  { q: "L O O K  B E H I N D  Y O U", a: ["Okay", "I wont"], bad: 1 },
+  { q: "Is someone behind you?", a: ["Yes", "I dont think so"], bad: 1 },
+  { q: "Do you like cats?", a: ["Of course", "Not really"], bad: 1 },
+  { q: "What color is your soul?", a: ["Black", "White"], bad: 1 },
+  { q: "Do you like me?", a: ["Yes Kat", "No Kat"], bad: 1 },
+  { q: "Do you believe your actions have consequences?", a: ["Yes", "Good"], bad: 1 }
+];
 
-    let current = 0;
-    let badMeter = 0;
+let current = 0;
+let badMeter = 0;
+let runChoices = [];        // track choices this run (strings)
+let runStartTime = 0;      // for speed-based achievement
+let lastInputTime = Date.now();
+let idleTimer = null;
 
-    const dialogueEl = document.getElementById("dialogue");
-    const optionsEl = document.getElementById("options");
-    const katImg = document.getElementById("kat-img");
-    const endScreen = document.getElementById("end-screen");
-    const endMessage = document.getElementById("end-message");
-    const endKatImg = document.getElementById("end-kat-img");
+/* DOM refs */
+const startScreen = document.getElementById('start-screen');
+const startBtn = document.getElementById('start-btn');
+const gameScreen = document.getElementById('game-screen');
+const katImg = document.getElementById('kat-img');
+const dialogueTextEl = document.getElementById('type-text');
+const cursorEl = document.getElementById('cursor-el');
+const choicesEl = document.getElementById('choices');
+const dialogueBox = document.getElementById('dialogue-box');
 
-    function startGame() {
-      document.querySelector(".start-screen").style.display = "none";
-      document.querySelector(".game-container").style.display = "flex";
-      showDialogue();
+const endScreen = document.getElementById('end-screen');
+const endKat = document.getElementById('end-kat');
+const endText = document.getElementById('end-text');
+const playAgainBtn = document.getElementById('play-again');
+
+const achToggle = document.getElementById('ach-toggle');
+const achPanel = document.getElementById('achievements');
+const achListEl = document.getElementById('ach-list');
+const popupEl = document.getElementById('achievement-popup');
+
+/* typing */
+let typingTimer = null;
+let typingIdx = 0;
+let typeString = "";
+
+/* ================= Achievements definitions ================= */
+const achievementList = {
+  firstChat: { name:"First Chat", desc:"Finish your first game" },
+  persistence: { name:"Persistence", desc:"Play 10 times" },
+  frequent: { name:"Frequent Visitor", desc:"Play 5 times" },
+  veteran: { name:"Veteran", desc:"Play 25 times" },
+  obsessed: { name:"Obsessed", desc:"Play 50 times" },
+  unfit: { name:"Unfit", desc:"Die once" },
+  unworthy: { name:"Unworthy", desc:"Die 3x in a row" },
+  trustedAlly: { name:"Trusted Ally", desc:"KAT LET YOU LIVE once" },
+  perfectServant: { name:"Perfect Servant", desc:"KAT LET YOU LIVE 3x in a row" },
+  curiousCat: { name:"Curious Cat", desc:"All good answers this run" },
+  defiant: { name:"Defiant", desc:"All bad answers this run" },
+  indecisive: { name:"Indecisive", desc:"Alternate good/bad every question" },
+  speedy: { name:"Speedy", desc:"Finish a run under 20s" },
+  mercy: { name:"Mercy", desc:"KAT LEFT 3x in a row" },
+  immortal: { name:"Immortal", desc:"KAT LET YOU LIVE 5x in a row" },
+  stalker: { name:"Stalker", desc:"Leave game idle for 10 minutes" },
+  nightowl: { name:"Night Owl", desc:"Play between 00:00–04:00 local time" }
+};
+
+/* persistent state */
+let achievementsUnlocked = JSON.parse(localStorage.getItem('kat_achievements') || '[]');
+let playCount = parseInt(localStorage.getItem('kat_play_count') || '0', 10) || 0;
+let deathStreak = parseInt(localStorage.getItem('kat_death_streak') || '0', 10) || 0;
+let winStreak = parseInt(localStorage.getItem('kat_win_streak') || '0', 10) || 0;
+let totalDeaths = parseInt(localStorage.getItem('kat_total_deaths') || '0', 10) || 0;
+let totalWins = parseInt(localStorage.getItem('kat_total_wins') || '0', 10) || 0;
+
+/* helper: render achievements list with stagger */
+function renderAchievements(){
+  achListEl.innerHTML = '';
+  if(achievementsUnlocked.length === 0){
+    achListEl.innerHTML = '<div style="opacity:.6;font-size:.9rem;padding:6px">No achievements yet</div>';
+    return;
+  }
+  achievementsUnlocked.forEach((k,i)=>{
+    const item = document.createElement('div');
+    item.className = 'ach-item';
+    item.textContent = `🏆 ${achievementList[k].name}`;
+    achListEl.appendChild(item);
+    // stagger reveal
+    setTimeout(()=> item.classList.add('show'), 60*i);
+  });
+}
+renderAchievements();
+
+function saveState(){
+  localStorage.setItem('kat_achievements', JSON.stringify(achievementsUnlocked));
+  localStorage.setItem('kat_play_count', String(playCount));
+  localStorage.setItem('kat_death_streak', String(deathStreak));
+  localStorage.setItem('kat_win_streak', String(winStreak));
+  localStorage.setItem('kat_total_deaths', String(totalDeaths));
+  localStorage.setItem('kat_total_wins', String(totalWins));
+}
+
+/* unlock achievement safely */
+function unlockAchievement(key){
+  if(!achievementList[key]) return;
+  if(!achievementsUnlocked.includes(key)){
+    achievementsUnlocked.push(key);
+    showPopup(`🏆 ${achievementList[key].name}`);
+    renderAchievements();
+    saveState();
+  }
+}
+
+/* popup with double glitch effect */
+function showPopup(text){
+  popupEl.textContent = text;
+  popupEl.classList.add('show');
+  // subtle re-glitch after 400ms
+  setTimeout(()=> popupEl.classList.add('show'), 0);
+  setTimeout(()=> popupEl.classList.remove('show'), 3200);
+}
+
+/* ================== Idle detection (Stalker) ================== */
+function resetIdleTimer(){
+  lastInputTime = Date.now();
+  if(idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+  // set idle timer for 10 minutes (600k ms)
+  idleTimer = setTimeout(()=>{
+    // only award if the player is in game-screen (idle there)
+    if(gameScreen.style.display === 'flex') unlockAchievement('stalker');
+  }, 600000); // 10 * 60 * 1000
+}
+// monitor user activity
+['mousemove','keydown','click','touchstart'].forEach(ev => {
+  window.addEventListener(ev, resetIdleTimer, {passive:true});
+});
+resetIdleTimer();
+
+/* ===================== Start / Play logic ===================== */
+function startGame(){
+  startScreen.style.display = 'none';
+  gameScreen.style.display = 'flex';
+  endScreen.style.display = 'none';
+  current = 0; badMeter = 0; runChoices = []; runStartTime = Date.now();
+  showDialogue();
+  resetIdleTimer();
+}
+startBtn.addEventListener('click', startGame);
+startScreen.addEventListener('click', (e)=>{ if(e.target === startScreen) startGame(); });
+
+/* typewriter */
+function startTyping(str, cb){
+  clearInterval(typingTimer);
+  typingIdx = 0;
+  typeString = str;
+  dialogueTextEl.textContent = '';
+  cursorEl.style.display = 'inline-block';
+  dialogueBox.classList.remove('show');
+  // reveal animation a tiny bit before typing
+  setTimeout(()=> dialogueBox.classList.add('show'), 10);
+  typingTimer = setInterval(()=>{
+    if(typingIdx < typeString.length){
+      dialogueTextEl.textContent += typeString.charAt(typingIdx);
+      typingIdx++;
+    } else {
+      clearInterval(typingTimer);
+      cursorEl.style.display = 'inline-block';
+      if(cb) setTimeout(cb, 220);
     }
+  }, 28);
+}
 
-    function showDialogue() {
-      optionsEl.innerHTML = "";
-      const d = dialogues[current];
-      typeWriter(d.q);
+/* show dialogue */
+function showDialogue(){
+  // ensure screens
+  endScreen.style.display = 'none';
+  gameScreen.style.display = 'flex';
+  choicesEl.innerHTML = '';
+  const d = dialogues[current];
+  const full = d ? `Kat: ${d.q}` : `Kat: ...`;
+  startTyping(full, ()=> showChoices());
+  updateKatFace();
+}
 
-      let answers = [...d.a];
-      if (Math.random() < 0.5) answers.reverse(); // shuffle
-
-      answers.forEach(answer => {
-        const btn = document.createElement("button");
-        btn.textContent = answer;
-        btn.onclick = () => {
-          if (answer !== d.a[0]) badMeter++;
-          current++;
-          updateKatFace();
-          if (current < dialogues.length) showDialogue();
-          else endGame();
-        };
-        optionsEl.appendChild(btn);
-      });
-    }
-
-    function typeWriter(text) {
-      let i = 0;
-      dialogueEl.innerHTML = "";
-      const interval = setInterval(() => {
-        dialogueEl.innerHTML += text.charAt(i);
-        i++;
-        if (i >= text.length) clearInterval(interval);
-      }, 40);
-    }
-
-    function updateKatFace() {
-      if (badMeter >= 3) katImg.src = "kat2.png";
-      else if (badMeter === 0) katImg.src = "kat3.png";
-      else katImg.src = "kat1.png";
-    }
-
-    function endGame() {
-      document.querySelector(".game-container").style.display = "none";
-      endScreen.style.display = "flex";
-      if (badMeter >= 3) {
-        endMessage.textContent = "YOU DIED.";
-        endKatImg.src = "kat2.png";
-      } else if (badMeter > 0) {
-        endMessage.textContent = "KAT LEFT.";
-        endKatImg.src = "kat1.png";
-      } else {
-        endMessage.textContent = "KAT LET YOU LIVE.";
-        endKatImg.src = "kat3.png";
+/* show choices with staggered animation */
+function showChoices(){
+  choicesEl.innerHTML = '';
+  const d = dialogues[current];
+  if(!d) return;
+  const opts = [...d.a].sort(()=>Math.random()-0.5);
+  opts.forEach((opt,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.textContent = opt;
+    // stagger in
+    setTimeout(()=> btn.classList.add('show'), 90*i);
+    btn.addEventListener('click', ()=> {
+      // record choice
+      runChoices.push(opt);
+      // wrong if chosen equals d.a[1]
+      if(opt === d.a[1]) {
+        badMeter += d.bad || 1;
+        // kat quick glitch effect
+        katImg.classList.add('glitch');
+        katImg.style.transform = 'scale(1.03) translateY(-6px) rotate(-1deg)';
+        katImg.style.filter = 'hue-rotate(10deg) saturate(1.2)';
+        setTimeout(()=>{ katImg.classList.remove('glitch'); katImg.style.transform=''; katImg.style.filter=''; }, 300);
       }
-    }
-  </script>
+      current++;
+      if(badMeter >= 3){
+        endGame('YOU DIED','kat2.png');
+      } else if(current >= dialogues.length){
+        if(badMeter === 0) endGame('KAT LET YOU LIVE','kat3.png');
+        else endGame('KAT LEFT','kat1.png');
+      } else {
+        showDialogue();
+      }
+      resetIdleTimer();
+    });
+    choicesEl.appendChild(btn);
+  });
+}
+
+/* update main kat face between questions */
+function updateKatFace(){
+  if(badMeter >= 3) katImg.src = 'kat2.png';
+  else if(badMeter === 0) katImg.src = 'kat3.png';
+  else katImg.src = 'kat1.png';
+}
+
+/* ===================== End game + Achievements checks ===================== */
+function endGame(message, imgSrc){
+  // hide main game content and show end-screen
+  gameScreen.style.display = 'none';
+  endScreen.style.display = 'flex';
+  endKat.src = imgSrc;
+  // reveal end image with animation
+  setTimeout(()=> endKat.classList.add('show'), 20);
+  endText.textContent = '';
+  // type end text (typewriter)
+  typeEndText(message, ()=>{
+    // achievements check after text done
+    achievementsCheck(message);
+  });
+}
+
+/* typewriter for end text */
+function typeEndText(txt, cb){
+  let idx=0;
+  endText.textContent = '';
+  const iv = setInterval(()=>{
+    if(idx < txt.length){
+      endText.textContent += txt.charAt(idx);
+      idx++;
+    } else { clearInterval(iv); if(cb) setTimeout(cb,300); }
+  }, 40);
+}
+
+/* play again */
+playAgainBtn.addEventListener('click', ()=>{
+  endKat.classList.remove('show');
+  current = 0; badMeter = 0; runChoices = []; runStartTime = Date.now();
+  endScreen.style.display = 'none';
+  gameScreen.style.display = 'flex';
+  showDialogue();
+  resetIdleTimer();
+});
+
+/* =================== Achievements logic on end =================== */
+function checkRunAchievements(resultText){
+  // runs stats
+  const runDuration = (Date.now() - runStartTime)/1000; // seconds
+  // good/bad patterns
+  const allGood = runChoices.length>0 && runChoices.every((c,idx)=> c === dialogues[idx].a[0]);
+  const allBad = runChoices.length>0 && runChoices.every((c,idx)=> c === dialogues[idx].a[1]);
+  const alternates = runChoices.length>1 && runChoices.every((c,idx)=> {
+    // alternating means choice differs from previous each time
+    if(idx===0) return true;
+    return c !== runChoices[idx-1];
+  });
+
+  // update counts + streaks
+  playCount++;
+  if(resultText.includes('YOU DIED')){
+    deathStreak++; winStreak = 0; totalDeaths++;
+    if(deathStreak === 1) unlockAchievement('unfit');
+    if(deathStreak >= 3) unlockAchievement('unworthy');
+  } else if(resultText.includes('KAT LET YOU LIVE')){
+    winStreak++; deathStreak = 0; totalWins++;
+    if(winStreak === 1) unlockAchievement('trustedAlly');
+    if(winStreak >= 3) unlockAchievement('perfectServant');
+    if(winStreak >= 5) unlockAchievement('immortal');
+  } else {
+    // KAT LEFT resets streaks except we can track mercy
+    deathStreak = 0; winStreak = 0;
+  }
+
+  // play count achievements
+  if(playCount === 1) unlockAchievement('firstChat');
+  if(playCount >= 5) unlockAchievement('frequent');
+  if(playCount >= 10) unlockAchievement('persistence');
+  if(playCount >= 25) unlockAchievement('veteran');
+  if(playCount >= 50) unlockAchievement('obsessed');
+
+  // run pattern achievements
+  if(allGood) unlockAchievement('curiousCat');
+  if(allBad) unlockAchievement('defiant');
+  if(alternates) unlockAchievement('indecisive');
+
+  // speedy
+  if(runDuration <= 20) unlockAchievement('speedy');
+
+  // mercy: KAT LEFT three times in a row (we can use a separate counter)
+  // we'll track via localStorage queue for last results
+  trackResultHistory(resultText);
+
+  // night owl: if current local hour in 0..3
+  const h = new Date().getHours();
+  if(h >= 0 && h <= 3) unlockAchievement('nightowl');
+
+  saveState();
+}
+
+/* track last few results for "mercy" detection */
+function trackResultHistory(resultText){
+  const hist = JSON.parse(localStorage.getItem('kat_result_history') || '[]');
+  hist.push(resultText);
+  if(hist.length > 10) hist.shift();
+  localStorage.setItem('kat_result_history', JSON.stringify(hist));
+  // check mercy: last 3 are "KAT LEFT"
+  const last3 = hist.slice(-3);
+  if(last3.length === 3 && last3.every(r=> r.includes('KAT LEFT'))) unlockAchievement('mercy');
+}
+
+/* top-level achievements check called in endGame() after end message typed */
+function achievementsCheck(resultText){
+  checkRunAchievements(resultText);
+}
+
+/* =================== Toggle / Popup / init =================== */
+achToggle.addEventListener('click', ()=> achPanel.classList.toggle('open'));
+
+/* show popup also accessible from unlockAchievement func */
+
+/* initial rendering */
+renderAchievements();
+
+/* expose startGame globally for debugging (optional) */
+window.startGame = startGame;
+
+</script>
 </body>
 </html>
