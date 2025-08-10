@@ -144,6 +144,7 @@ const achPanel = document.getElementById('achievements');
 const achListEl = document.getElementById('ach-list');
 const popupEl = document.getElementById('achievement-popup');
 
+
 /* typing */
 let typingTimer = null;
 let typingIdx = 0;
@@ -443,7 +444,15 @@ function achievementsCheck(resultText){
 }
 
 /* =================== Toggle / Popup / init =================== */
-achToggle.addEventListener('click', ()=> achPanel.classList.toggle('open'));
+['click', 'touchstart'].forEach(ev => {
+  achToggle.addEventListener(ev, e => {
+    // Make sure it's the toggle button being pressed
+    if (e.target === achToggle) {
+      e.preventDefault();
+      achPanel.classList.toggle('open');
+    }
+  }, { passive: false });
+});
 
 /* show popup also accessible from unlockAchievement func */
 
